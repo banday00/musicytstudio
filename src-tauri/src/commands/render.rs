@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -230,11 +232,15 @@ pub async fn start_render(
     ]);
 
     // Spawn FFmpeg process
-    let mut child = Command::new("ffmpeg")
-        .args(&args)
+    let mut command = Command::new("ffmpeg");
+    command.args(&args)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
+        .stderr(Stdio::piped());
+        
+    #[cfg(target_os = "windows")]
+    command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    
+    let mut child = command.spawn()
         .map_err(|e| format!("Failed to start FFmpeg: {}", e))?;
 
     let pid = child.id();
@@ -386,9 +392,10 @@ pub async fn cancel_render(
         // On Windows, use taskkill
         #[cfg(target_os = "windows")]
         {
-            Command::new("taskkill")
-                .args(&["/PID", &pid.to_string(), "/F"])
-                .spawn()
+            let mut cmd = Command::new("taskkill");
+            cmd.args(&["/PID", &pid.to_string(), "/F"]);
+            cmd.creation_flags(0x08000000);
+            cmd.spawn()
                 .map_err(|e| format!("Failed to kill process: {}", e))?;
         }
 
@@ -413,9 +420,13 @@ pub async fn cancel_render(
 #[tauri::command]
 pub async fn check_gpu_available() -> serde_json::Value {
     // Try NVIDIA
-    let nvidia = Command::new("ffmpeg")
-        .args(&["-hide_banner", "-encoders"])
-        .output()
+    let mut cmd = Command::new("ffmpeg");
+    cmd.args(&["-hide_banner", "-encoders"]);
+    
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+
+    let nvidia = cmd.output()
         .map(|output| {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let has_nvenc = stdout.contains("h264_nvenc");
