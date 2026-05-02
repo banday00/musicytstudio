@@ -4,7 +4,6 @@ import type {
   RenderSettings,
   RenderJob,
   RenderProgress,
-  FlarePreset,
   EqPresetName,
 } from "../types";
 import { EQ_PRESETS } from "../types";
@@ -72,7 +71,7 @@ interface ProjectStore {
     renderSettings: Partial<RenderSettings>;
     eqBands: Record<string, number>;
     backgroundImage: string | null;
-    flarePreset: FlarePreset;
+    overlayVideo: string | null;
   }) => void;
   resetProject: () => void;
 }
@@ -88,7 +87,7 @@ const DEFAULT_RENDER_SETTINGS: RenderSettings = {
   outputFolder: "",
   outputFilename: "output.mp4",
   backgroundImage: null,
-  flarePreset: "none",
+  overlayVideo: null,
   eqBands: { ...DEFAULT_EQ },
   fastMode: false,
   visualizer: "none",

@@ -41,12 +41,11 @@ export function RenderSettings() {
       });
   }, []);
 
-  // Auto-generate timestamp filename on mount
+  // Auto-generate unix timestamp filename on mount
   useEffect(() => {
-    const now = new Date();
-    const timestamp = now.toISOString().replace(/[:.]/g, "-").slice(0, 19); // e.g., 2026-05-02T23-40-01
+    const unixTs = Math.floor(Date.now() / 1000); // e.g., 1746204594
     const safeProjectName = projectName.replace(/[^a-zA-Z0-9]/g, "_");
-    const newFilename = `${safeProjectName}_${timestamp}.mp4`;
+    const newFilename = `${safeProjectName}_${unixTs}.mp4`;
     updateRenderSettings({ outputFilename: newFilename });
   }, [projectName, updateRenderSettings]);
 
